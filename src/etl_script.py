@@ -19,7 +19,13 @@ def main():
     collection = db.patients
 
     csv_files = [os.path.join("/data", f) for f in os.listdir("/data") if f.lower().endswith(".csv")]
-    
+
+    # Clear existing documents once before loading new files so previous
+    # inserts aren't wiped out for every file processed
+    logger.info(f"Deleting all documents from collection: {collection.name}")
+    delete_result = collection.delete_many({})
+    logger.info(f"Deleted {delete_result.deleted_count} documents.")
+
     for file in csv_files:
         logger.info(f"Processing {file}")
         process_csv_file(file, collection, logger)
@@ -36,10 +42,6 @@ def process_csv_file(filename, collection, logger):
     
     documents = df.to_dict('records')
 
-    logger.info(f"Deleting all documents from collection: {collection.name}")
-    delete_result = collection.delete_many({})
-    logger.info(f"Deleted {delete_result.deleted_count} documents.")
-    
     result = collection.insert_many(documents)
     logger.info(f"Inserted {len(result.inserted_ids)} documents from {filename}")
 
